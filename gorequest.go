@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"encoding/xml"
 	"io"
 	"io/ioutil"
 	"log"
@@ -1025,6 +1026,24 @@ func (s *SuperAgent) EndStruct(v interface{}, callback ...func(response Response
 		return nil, body, errs
 	}
 	err := json.Unmarshal(body, &v)
+	if err != nil {
+		s.Errors = append(s.Errors, err)
+		return resp, body, s.Errors
+	}
+	respCallback := *resp
+	if len(callback) != 0 {
+		callback[0](&respCallback, v, body, s.Errors)
+	}
+	return resp, body, nil
+}
+
+// EndStructXml should be used when you want the body as a struct. The callbacks work the same way as with `End`, except that a struct is used instead of a string.
+func (s *SuperAgent) EndStructXml(v interface{}, callback ...func(response Response, v interface{}, body []byte, errs []error)) (Response, []byte, []error) {
+	resp, body, errs := s.EndBytes()
+	if errs != nil {
+		return nil, body, errs
+	}
+	err := xml.Unmarshal(body, &v)
 	if err != nil {
 		s.Errors = append(s.Errors, err)
 		return resp, body, s.Errors
